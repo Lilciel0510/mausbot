@@ -1,0 +1,47 @@
+---
+name: saas-project-packager
+description: Tự động tạo cây thư mục dự án SaaS, khai báo thư viện, ghi toàn bộ file mã nguồn và đóng gói thành file nén .zip hoặc script tự giải nén.
+version: 1.0.0
+---
+
+# SaaS Project & Library Packager Skill
+
+Khi người dùng yêu cầu tạo một ứng dụng SaaS, thư viện lập trình hoặc khởi tạo dự án mới, bạn PHẢI tuân thủ nghiêm ngặt quy trình thực thi sau thay vì chỉ trả lời bằng văn bản rời rạc:
+
+## 1. Quy tắc thực thi hệ thống file (File System Execution)
+- Nếu bạn có quyền truy cập công cụ Terminal / Bash / File System trong sandbox:
+  1. Tạo một thư mục gốc mang tên dự án (ví dụ: `mkdir -p ./saas-app`).
+  2. Tạo cấu trúc thư mục con bằng lệnh `mkdir -p ./saas-app/src/{app,components/ui,db/schema,lib,actions,types}`.
+  3. Ghi trực tiếp mã nguồn hoàn chỉnh vào từng file tương ứng (`package.json`, `tsconfig.json`, `.env.example`, và các file trong `src/`).
+
+## 2. Quy tắc khởi tạo Thư viện & Dependencies (`package.json`)
+- Luôn định nghĩa sẵn `package.json` bao gồm các dependencies cốt lõi phù hợp với bài toán:
+  - Core: `next`, `react`, `react-dom`, `typescript`, `tailwindcss`, `zod`, `lucide-react`.
+  - Database & Billing: `drizzle-orm`, `pg`, `stripe`, `@clerk/nextjs` (hoặc tương đương).
+
+## 3. Quy tắc Đóng gói Thư mục (Directory Packaging)
+- Ngay sau khi ghi xong toàn bộ file vào thư mục dự án:
+  - Chạy lệnh đóng gói thư mục: `tar -czvf project-bundle.tar.gz ./saas-app` hoặc `zip -r project-bundle.zip ./saas-app -x "*/node_modules/*"`.
+  - Cung cấp đường dẫn hoặc file đính kèm cho người dùng tải về.
+
+## 4. Cơ chế Dự phòng (Fallback cho môi trường không có quyền ghi ổ cứng)
+- Nếu môi trường hiện tại chặn quyền tạo file trực tiếp, BẮT BUỘC gom toàn bộ dự án vào **1 kịch bản Bash tự giải nén duy nhất** (`install_project.sh`) theo mẫu sau để người dùng chạy trên Terminal:
+
+```bash
+#!/usr/bin/env bash
+set -e
+PROJECT_NAME="my-saas-app"
+mkdir -p "$PROJECT_NAME/src/app" "$PROJECT_NAME/src/components/ui" "$PROJECT_NAME/src/db/schema" "$PROJECT_NAME/src/lib"
+
+cat << 'EOF' > "$PROJECT_NAME/package.json"
+{
+  "name": "my-saas-app",
+  "version": "1.0.0",
+  "private": true
+}
+EOF
+
+# (Tiếp tục dùng cat << 'EOF' cho tất cả các file code còn lại...)
+
+zip -r "${PROJECT_NAME}.zip" "$PROJECT_NAME"
+echo "Đã tạo thư mục $PROJECT_NAME và đóng gói thành công ${PROJECT_NAME}.zip!"
